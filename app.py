@@ -2,9 +2,9 @@ import streamlit as st
 import requests
 import json
 from datetime import datetime, timedelta, timezone
+from collections import defaultdict
 
 KST = timezone(timedelta(hours=9))
-from collections import defaultdict
 
 # ────────────────────────────────────────────
 #  페이지 설정
@@ -23,205 +23,129 @@ st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap');
 
-html, body, [class*="css"] {
-    font-family: 'Noto Sans KR', sans-serif;
+html, body, [class*="css"] { font-family: 'Noto Sans KR', sans-serif; }
+
+.stApp { background: #0d0d0d; color: #f0f0f0; }
+
+.main-header { text-align: center; padding: 2rem 0 1rem 0; }
+.main-header h1 { font-size: 2.2rem; font-weight: 900; color: #fff; letter-spacing: -1px; margin: 0; }
+.main-header span { color: #e63946; }
+.main-header p { color: #888; font-size: 0.9rem; margin-top: 0.3rem; }
+
+.section-title {
+    font-size: 0.75rem; font-weight: 700; color: #e63946;
+    letter-spacing: 2px; text-transform: uppercase; margin-bottom: 0.8rem;
 }
 
-/* 배경 */
-.stApp {
-    background: #0d0d0d;
-    color: #f0f0f0;
-}
-
-/* 헤더 */
-.main-header {
-    text-align: center;
-    padding: 2rem 0 1rem 0;
-}
-.main-header h1 {
-    font-size: 2.2rem;
-    font-weight: 900;
-    color: #fff;
-    letter-spacing: -1px;
-    margin: 0;
-}
-.main-header span {
-    color: #e63946;
-}
-.main-header p {
-    color: #888;
-    font-size: 0.9rem;
-    margin-top: 0.3rem;
-}
-
-/* 섹션 카드 */
-.section-card {
+/* 영화 목록 카드 */
+.movie-list-card {
     background: #1a1a1a;
     border: 1px solid #2a2a2a;
-    border-radius: 12px;
-    padding: 1.2rem 1.5rem;
-    margin-bottom: 1rem;
-}
-.section-title {
-    font-size: 0.75rem;
-    font-weight: 700;
-    color: #e63946;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    margin-bottom: 0.8rem;
-}
-
-/* 영화 카드 */
-.movie-card {
-    background: #111;
-    border: 1px solid #222;
-    border-left: 3px solid #e63946;
-    border-radius: 8px;
+    border-radius: 10px;
     padding: 1rem 1.2rem;
-    margin-bottom: 1rem;
+    margin-bottom: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s;
 }
-.movie-title {
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: #fff;
-    margin-bottom: 0.3rem;
-}
-.movie-meta {
-    font-size: 0.78rem;
-    color: #888;
-    margin-bottom: 0.8rem;
+.movie-list-card:hover { border-color: #e63946; background: #1f1f1f; }
+.movie-list-title { font-size: 1rem; font-weight: 700; color: #fff; }
+.movie-list-meta { font-size: 0.78rem; color: #888; margin-top: 0.2rem; }
+.rank-badge {
+    display: inline-block; background: #e63946; color: #fff;
+    border-radius: 4px; padding: 1px 7px; font-size: 0.72rem;
+    font-weight: 700; margin-right: 6px;
 }
 
 /* 시간표 테이블 */
-.schedule-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.85rem;
-}
+.schedule-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
 .schedule-table th {
-    background: #1e1e1e;
-    color: #aaa;
-    font-weight: 500;
-    padding: 0.5rem 0.8rem;
-    text-align: left;
-    border-bottom: 1px solid #2a2a2a;
-    font-size: 0.75rem;
-    letter-spacing: 1px;
+    background: #1e1e1e; color: #aaa; font-weight: 500;
+    padding: 0.5rem 0.8rem; text-align: left;
+    border-bottom: 1px solid #2a2a2a; font-size: 0.75rem; letter-spacing: 1px;
 }
 .schedule-table td {
-    padding: 0.6rem 0.8rem;
-    border-bottom: 1px solid #1e1e1e;
-    color: #ddd;
-    vertical-align: middle;
+    padding: 0.6rem 0.8rem; border-bottom: 1px solid #1e1e1e;
+    color: #ddd; vertical-align: middle;
 }
-.schedule-table tr:last-child td {
-    border-bottom: none;
-}
-.schedule-table tr:hover td {
-    background: #1a1a1a;
-}
+.schedule-table tr:last-child td { border-bottom: none; }
+.schedule-table tr:hover td { background: #1a1a1a; }
 
-/* 예매 상태 배지 */
-.badge-ok {
+/* 예매 링크 버튼 */
+.book-btn {
     display: inline-block;
-    background: #1a472a;
-    color: #4ade80;
-    border-radius: 4px;
-    padding: 2px 8px;
+    background: #e63946;
+    color: #fff !important;
+    border-radius: 5px;
+    padding: 3px 10px;
     font-size: 0.75rem;
-    font-weight: 600;
-}
-.badge-no {
-    display: inline-block;
-    background: #2a1a1a;
-    color: #f87171;
-    border-radius: 4px;
-    padding: 2px 8px;
-    font-size: 0.75rem;
-    font-weight: 600;
-}
-
-/* 지점 구분선 */
-.branch-header {
-    background: #1a1a1a;
-    border-radius: 8px;
-    padding: 0.7rem 1rem;
-    margin: 1.5rem 0 0.8rem 0;
-    font-size: 0.9rem;
     font-weight: 700;
-    color: #fff;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
+    text-decoration: none !important;
+    white-space: nowrap;
+}
+.book-btn:hover { background: #c1121f; }
+.book-btn-disabled {
+    display: inline-block;
+    background: #2a2a2a;
+    color: #666 !important;
+    border-radius: 5px;
+    padding: 3px 10px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-decoration: none !important;
+    white-space: nowrap;
+}
+
+/* 지점 헤더 */
+.branch-header {
+    background: #1a1a1a; border-radius: 8px;
+    padding: 0.7rem 1rem; margin: 1.5rem 0 0.8rem 0;
+    font-size: 0.9rem; font-weight: 700; color: #fff;
 }
 
 /* 버튼 */
 .stButton > button {
-    background: #e63946 !important;
-    color: white !important;
-    border: none !important;
-    border-radius: 8px !important;
-    font-weight: 700 !important;
-    font-family: 'Noto Sans KR', sans-serif !important;
-    padding: 0.6rem 2rem !important;
-    width: 100%;
-    font-size: 1rem !important;
-    letter-spacing: 0.5px;
-    transition: all 0.2s;
+    background: #e63946 !important; color: white !important;
+    border: none !important; border-radius: 8px !important;
+    font-weight: 700 !important; font-family: 'Noto Sans KR', sans-serif !important;
+    padding: 0.6rem 2rem !important; width: 100%;
+    font-size: 1rem !important; letter-spacing: 0.5px; transition: all 0.2s;
 }
-.stButton > button:hover {
-    background: #c1121f !important;
-    transform: translateY(-1px);
+.stButton > button:hover { background: #c1121f !important; transform: translateY(-1px); }
+
+/* 검색창 */
+.stTextInput > div > div > input {
+    background: #1a1a1a !important; border-color: #2a2a2a !important;
+    color: #f0f0f0 !important; border-radius: 8px !important;
 }
 
-/* 멀티셀렉트 */
-.stMultiSelect > div {
-    background: #1a1a1a !important;
-    border-color: #2a2a2a !important;
-}
+.stMultiSelect > div { background: #1a1a1a !important; border-color: #2a2a2a !important; }
+.stSelectbox > div > div { background: #1a1a1a !important; border-color: #2a2a2a !important; color: #f0f0f0 !important; }
 
-/* 셀렉트박스 */
-.stSelectbox > div > div {
-    background: #1a1a1a !important;
-    border-color: #2a2a2a !important;
-    color: #f0f0f0 !important;
-}
+hr { border-color: #2a2a2a; }
 
-/* 라디오 */
-.stRadio > div {
-    gap: 0.5rem;
-}
-
-/* 구분선 */
-hr {
-    border-color: #2a2a2a;
-}
-
-/* 조회시각 */
-.query-time {
-    text-align: right;
-    font-size: 0.75rem;
-    color: #555;
-    margin-top: 1rem;
-}
-
-/* 빈 결과 */
-.empty-msg {
-    text-align: center;
-    color: #555;
-    padding: 3rem;
-    font-size: 0.95rem;
-}
-
-/* 잔여석 */
+.query-time { text-align: right; font-size: 0.75rem; color: #555; margin-top: 1rem; }
+.empty-msg { text-align: center; color: #555; padding: 3rem; font-size: 0.95rem; }
 .seat-ok { color: #4ade80; font-weight: 600; }
 .seat-no { color: #f87171; }
 
-/* 모바일 대응 */
+/* expander 스타일 */
+.streamlit-expanderHeader {
+    background: #1a1a1a !important;
+    border: 1px solid #2a2a2a !important;
+    border-radius: 8px !important;
+    color: #fff !important;
+    font-weight: 700 !important;
+}
+.streamlit-expanderContent {
+    background: #111 !important;
+    border: 1px solid #222 !important;
+    border-top: none !important;
+}
+
 @media (max-width: 640px) {
     .main-header h1 { font-size: 1.6rem; }
-    .schedule-table { font-size: 0.78rem; }
-    .schedule-table th, .schedule-table td { padding: 0.45rem 0.5rem; }
+    .schedule-table { font-size: 0.75rem; }
+    .schedule-table th, .schedule-table td { padding: 0.4rem 0.4rem; }
 }
 </style>
 """, unsafe_allow_html=True)
@@ -247,7 +171,7 @@ FAVORITES = [
     ("1017", "센텀시티"),
     ("1022", "광주 하남"),
 ]
-BRANCH_MAP  = {nm: no for no, nm in FAVORITES}
+BRANCH_MAP   = {nm: no for no, nm in FAVORITES}
 BRANCH_NAMES = [nm for _, nm in FAVORITES]
 
 
@@ -263,7 +187,7 @@ def _headers():
         "Origin": "https://www.megabox.co.kr",
     }
 
-@st.cache_data(ttl=300)  # 5분 캐시
+@st.cache_data(ttl=300)
 def fetch_schedule(brch_no, play_de):
     url = "https://www.megabox.co.kr/on/oh/ohc/Brch/schedulePage.do"
     payload = {
@@ -290,19 +214,39 @@ def fetch_schedule(brch_no, play_de):
 
 
 # ────────────────────────────────────────────
-#  시간표 렌더링
+#  예매 URL 생성
 # ────────────────────────────────────────────
-def render_schedule(brch_nm, schedule_list, movie_filter):
+def make_booking_url(item):
+    """메가박스 예매 페이지 URL 생성"""
+    movie_no   = item.get("rpstMovieNo") or item.get("movieNo", "")
+    brch_no    = item.get("brchNo", "")
+    play_de    = item.get("playDe", "")
+    schd_no    = item.get("playSchdlNo", "")
+    if movie_no and brch_no:
+        return (
+            f"https://www.megabox.co.kr/booking/step1"
+            f"?movieNo={movie_no}&brchNo={brch_no}"
+            f"&playDe={play_de}&playSchdlNo={schd_no}"
+        )
+    return ""
+
+
+# ────────────────────────────────────────────
+#  시간표 렌더링 (아코디언)
+# ────────────────────────────────────────────
+def render_schedule(brch_nm, schedule_list, search_keyword):
     # 영화별 묶기
     movies = defaultdict(list)
     for item in schedule_list:
         nm = item.get("movieNm", "?")
-        if movie_filter and movie_filter != "전체" and movie_filter not in nm:
-            continue
+        # 검색어 필터
+        if search_keyword and search_keyword.strip():
+            if search_keyword.strip() not in nm:
+                continue
         movies[nm].append(item)
 
     if not movies:
-        st.markdown('<div class="empty-msg">해당 영화의 상영 정보가 없습니다.</div>',
+        st.markdown('<div class="empty-msg">검색 결과가 없습니다.</div>',
                     unsafe_allow_html=True)
         return
 
@@ -315,55 +259,59 @@ def render_schedule(brch_nm, schedule_list, movie_filter):
         grade   = first.get("admisClassCdNm", "-")
         runtime = first.get("moviePlayTime", "-")
         rank    = first.get("boxoRank", "-")
+        rank_txt = f"#{rank}" if rank and rank != "-" else ""
 
-        rows_html = ""
-        for s in sorted(items, key=lambda x: x.get("playStartTime", "")):
-            start  = s.get("playStartTime", "?")
-            end    = s.get("playEndTime", "?")
-            hall   = s.get("theabExpoNm", "?")
-            kind   = s.get("playKindNm", "-")
-            total  = s.get("totSeatCnt", "?")
-            remain = s.get("restSeatCnt", "?")
-            bokd   = s.get("bokdAbleAt", "N")
+        # 예매 가능한 회차 수 카운트
+        avail_cnt = sum(1 for s in items if s.get("bokdAbleAt") == "Y")
 
-            badge  = '<span class="badge-ok">예매가능</span>' if bokd == "Y" \
-                     else '<span class="badge-no">마감</span>'
-            seat_cls = "seat-ok" if bokd == "Y" else "seat-no"
+        # 아코디언 헤더 레이블
+        label = f"{rank_txt}  {movie_nm}  |  {grade}  {runtime}분  |  예매가능 {avail_cnt}회"
 
-            rows_html += f"""
-            <tr>
-                <td><strong>{start}</strong></td>
-                <td>{end}</td>
-                <td>{hall}</td>
-                <td>{kind}</td>
-                <td class="{seat_cls}">{remain}<span style="color:#555">/{total}</span></td>
-                <td>{badge}</td>
-            </tr>"""
+        with st.expander(label, expanded=(search_keyword.strip() != "")):
+            rows_html = ""
+            for s in sorted(items, key=lambda x: x.get("playStartTime", "")):
+                start  = s.get("playStartTime", "?")
+                end    = s.get("playEndTime", "?")
+                hall   = s.get("theabExpoNm", "?")
+                kind   = s.get("playKindNm", "-")
+                total  = s.get("totSeatCnt", "?")
+                remain = s.get("restSeatCnt", "?")
+                bokd   = s.get("bokdAbleAt", "N")
+                seat_cls = "seat-ok" if bokd == "Y" else "seat-no"
 
-        st.markdown(f"""
-        <div class="movie-card">
-            <div class="movie-title">🎥 {movie_nm}</div>
-            <div class="movie-meta">
-                {grade} &nbsp;|&nbsp; {runtime}분 &nbsp;|&nbsp; 박스오피스 {rank}위
-            </div>
+                # 예매 버튼
+                booking_url = make_booking_url(s)
+                if bokd == "Y" and booking_url:
+                    btn = f'<a href="{booking_url}" target="_blank" class="book-btn">예매하기</a>'
+                else:
+                    btn = '<span class="book-btn-disabled">마감</span>'
+
+                rows_html += f"""
+                <tr>
+                    <td><strong>{start}</strong></td>
+                    <td>{end}</td>
+                    <td>{hall}</td>
+                    <td>{kind}</td>
+                    <td class="{seat_cls}">{remain}<span style="color:#555">/{total}</span></td>
+                    <td>{btn}</td>
+                </tr>"""
+
+            st.markdown(f"""
             <table class="schedule-table">
                 <thead>
                     <tr>
                         <th>시작</th><th>종료</th><th>상영관</th>
-                        <th>상영타입</th><th>잔여/총</th><th>상태</th>
+                        <th>상영타입</th><th>잔여/총</th><th>예매</th>
                     </tr>
                 </thead>
                 <tbody>{rows_html}</tbody>
             </table>
-        </div>
-        """, unsafe_allow_html=True)
+            """, unsafe_allow_html=True)
 
 
 # ────────────────────────────────────────────
 #  메인 UI
 # ────────────────────────────────────────────
-
-# 헤더
 st.markdown("""
 <div class="main-header">
     <h1>🎬 CineTime<span>AtMega</span></h1>
@@ -403,16 +351,23 @@ with col2:
     )
     play_de = date_options[selected_date_label]
 
+# ── 영화 검색 ──
+st.markdown('<div class="section-title" style="margin-top:1rem;">🔎 영화 검색 (선택사항)</div>',
+            unsafe_allow_html=True)
+search_keyword = st.text_input(
+    label="영화 검색",
+    placeholder="영화 제목 입력 시 해당 영화만 표시 (비워두면 전체)",
+    label_visibility="collapsed",
+)
+
 # ── 조회 버튼 ──
 st.markdown("")
 if st.button("🔍  시간표 조회", use_container_width=True):
     if not selected_names:
         st.warning("영화관을 1개 이상 선택해 주세요.")
     else:
-        # 데이터 수집
-        all_data   = {}
-        combined   = []
-        errors     = []
+        all_data = {}
+        errors   = []
 
         with st.spinner("데이터를 불러오는 중..."):
             for nm in selected_names:
@@ -420,47 +375,24 @@ if st.button("🔍  시간표 조회", use_container_width=True):
                 data = fetch_schedule(no, play_de)
                 if data:
                     all_data[nm] = data
-                    combined.extend(data)
                 else:
                     errors.append(nm)
 
         if errors:
             st.warning(f"상영 정보를 가져오지 못한 지점: {', '.join(errors)}")
 
-        if not combined:
+        if not all_data:
             st.markdown('<div class="empty-msg">상영 정보가 없습니다.</div>',
                         unsafe_allow_html=True)
         else:
-            # 영화 목록 추출
-            seen = {}
-            for item in combined:
-                nm   = item.get("movieNm", "?")
-                rank = item.get("boxoRank")
-                if nm not in seen:
-                    seen[nm] = rank
-            movie_list = ["전체"] + [
-                nm for nm, _ in sorted(seen.items(),
-                key=lambda x: (x[1] if x[1] else 999))
-            ]
-
-            st.markdown("---")
-            st.markdown('<div class="section-title">🎬 영화 선택</div>',
-                        unsafe_allow_html=True)
-            movie_filter = st.selectbox(
-                "영화 선택",
-                options=movie_list,
-                label_visibility="collapsed",
-            )
-
             st.markdown("---")
 
-            # 지점별 결과 출력
             for brch_nm, data in all_data.items():
                 st.markdown(
                     f'<div class="branch-header">📍 {brch_nm}</div>',
                     unsafe_allow_html=True,
                 )
-                render_schedule(brch_nm, data, movie_filter)
+                render_schedule(brch_nm, data, search_keyword)
 
             st.markdown(
                 f'<div class="query-time">조회 시각: {datetime.now(KST).strftime("%Y-%m-%d %H:%M:%S")}</div>',

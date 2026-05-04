@@ -11,7 +11,7 @@ KST = timezone(timedelta(hours=9))
 # ────────────────────────────────────────────
 st.set_page_config(
     page_title="CineTimeAtMega",
-    page_icon="🎬",
+    page_icon="favicon.png",
     layout="wide",
     initial_sidebar_state="collapsed",
 )

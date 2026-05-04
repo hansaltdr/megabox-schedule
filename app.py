@@ -1,7 +1,9 @@
 import streamlit as st
 import requests
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+
+KST = timezone(timedelta(hours=9))
 from collections import defaultdict
 
 # ────────────────────────────────────────────
@@ -385,7 +387,7 @@ with col1:
 
 with col2:
     st.markdown('<div class="section-title">📅 날짜 선택</div>', unsafe_allow_html=True)
-    today = datetime.today()
+    today = datetime.now(KST)
     date_options = {}
     for i in range(7):
         d = today + timedelta(days=i)
@@ -461,6 +463,6 @@ if st.button("🔍  시간표 조회", use_container_width=True):
                 render_schedule(brch_nm, data, movie_filter)
 
             st.markdown(
-                f'<div class="query-time">조회 시각: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}</div>',
+                f'<div class="query-time">조회 시각: {datetime.now(KST).strftime("%Y-%m-%d %H:%M:%S")}</div>',
                 unsafe_allow_html=True,
             )

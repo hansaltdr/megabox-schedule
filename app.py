@@ -136,10 +136,35 @@ hr { border-color: #2a2a2a; }
     color: #fff !important;
     font-weight: 700 !important;
 }
+.streamlit-expanderHeader p {
+    color: #fff !important;
+    font-weight: 700 !important;
+}
+.streamlit-expanderHeader svg {
+    fill: #fff !important;
+    stroke: #fff !important;
+}
 .streamlit-expanderContent {
     background: #111 !important;
     border: 1px solid #222 !important;
     border-top: none !important;
+}
+/* Streamlit 최신버전 expander 대응 */
+[data-testid="stExpander"] {
+    background: #1a1a1a !important;
+    border: 1px solid #2a2a2a !important;
+    border-radius: 8px !important;
+    margin-bottom: 0.5rem;
+}
+[data-testid="stExpander"] summary {
+    color: #fff !important;
+    font-weight: 700 !important;
+    background: #1a1a1a !important;
+}
+[data-testid="stExpander"] summary p,
+[data-testid="stExpander"] summary span {
+    color: #fff !important;
+    font-weight: 700 !important;
 }
 
 @media (max-width: 640px) {
@@ -217,17 +242,10 @@ def fetch_schedule(brch_no, play_de):
 #  예매 URL 생성
 # ────────────────────────────────────────────
 def make_booking_url(item):
-    """메가박스 예매 페이지 URL 생성"""
-    movie_no   = item.get("rpstMovieNo") or item.get("movieNo", "")
-    brch_no    = item.get("brchNo", "")
-    play_de    = item.get("playDe", "")
-    schd_no    = item.get("playSchdlNo", "")
-    if movie_no and brch_no:
-        return (
-            f"https://www.megabox.co.kr/booking/step1"
-            f"?movieNo={movie_no}&brchNo={brch_no}"
-            f"&playDe={play_de}&playSchdlNo={schd_no}"
-        )
+    """메가박스 영화 상세 페이지 URL 생성"""
+    movie_no = item.get("rpstMovieNo") or item.get("movieNo", "")
+    if movie_no:
+        return f"https://www.megabox.co.kr/movie/detail?movieNo={movie_no}"
     return ""
 
 
